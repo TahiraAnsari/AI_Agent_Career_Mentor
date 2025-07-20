@@ -4,7 +4,7 @@ from agents import Agent, Runner, AsyncOpenAI, OpenAIChatCompletionsModel
 from agents.run import RunConfig
 from roadmap_tool import get_career_roadmap
 
-gemini_key = "AIzaSyAdxJObQdZ-qoDS35s9d3nyf7WwvPDd3e0"
+gemini_key = ""#add your own gemini key
 
 load_dotenv()
 client = AsyncOpenAI(
