@@ -1,57 +1,50 @@
 import os
 from dotenv import load_dotenv
-from agents import Agent, Runner, AsyncOpenAI, OpenAIChatCompletionsModel
+from agents import Runner, AsyncOpenAI, OpenAIChatCompletionsModel
 from agents.run import RunConfig
-from roadmap_tool import get_career_roadmap
 
-gemini_key = ""
+# Load Agents
+from my_agent.career_agent import career_agent
+from my_agent.skill_agent import skill_agent
+from my_agent.job_agent import job_agent
+from my_agent.triage_agent import triage_agent
 
 load_dotenv()
+
+# Create client
 client = AsyncOpenAI(
-    api_key=gemini_key, 
+    api_key=os.getenv("GEMINI_API_KEY"),
     base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
 )
 
+# Model config
 model = OpenAIChatCompletionsModel(
-    model="gemini-2.0-flash", 
-    openai_client=client)
+    model="gemini-2.0-flash",
+    openai_client=client
+)
+
+# Apply model to agents
+career_agent.model = model
+skill_agent.model = model
+job_agent.model = model
+triage_agent.model = model
+
 config = RunConfig(
-    model=model, 
-    tracing_disabled=True
-)
-
-career_agent = Agent(
-    name="CareerAgent",
-    instructions="You ask about interests and suggest a career field.",
-    model=model
-)
-
-skill_agent = Agent(
-    name="SkillAgent",
-    instructions="You share the roadmap using the get_career_roadmap tool.",
     model=model,
-    tools=[get_career_roadmap]
-)
-
-job_agent = Agent(
-    name="JobAgent",
-    instructions="you suggest job titles in the choosen career",
-    model=model
+    tracing_disabled=True
 )
 
 def main():
     print("\U0001F393 Career Master Agent\n")
-    interest = input("What are your Interest?")
 
-    result1 = Runner.run_sync(career_agent,interest,run_config=config)
-    field = result1.final_output.strip()
-    print("\nSuggested Career:",field)
+    while True:
+        interest = input("What are your interests? (type 'quit' to exit): ").strip()
+        if interest.lower() == 'quit':
+            print("Goodbye, take care!")
+            break
 
-    result2 = Runner.run_sync(skill_agent,field,run_config=config)
-    print("\nRequired Skill:",result2.final_output)
-
-    result3 = Runner.run_sync(job_agent,field,run_config=config)
-    print("\nPossible Jobs:",result3.final_output)
+        result = Runner.run_sync(triage_agent, interest, run_config=config)
+        print("\n" + result.final_output + "\n" + "-"*50)
 
 if __name__ == "__main__":
     main()
